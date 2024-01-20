@@ -40,6 +40,7 @@ namespace ReadingListBackend.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             
+            // make sure the author and genre already exist within the db
             var authorExists = await _context.Authors.AnyAsync(a => a.Id == bookRequest.AuthorId);
             var genreExists = await _context.Genres.AnyAsync(g => g.Id == bookRequest.GenreId);
             if (!authorExists || !genreExists) return BadRequest("Invalid AuthorId or GenreId");
@@ -49,7 +50,6 @@ namespace ReadingListBackend.Controllers
                 Title = bookRequest.Title,
                 AuthorId = bookRequest.AuthorId,
                 GenreId = bookRequest.GenreId,
-                // Map other properties as needed for book creation
             };
             
             await _context.Books.AddAsync(book);
