@@ -10,6 +10,6 @@ namespace ReadingListBackend.Models
 
         public int UserId { get; set; }
         public User User { get; set; }
-        public List<Book> Books { get; set; } = new();
+        public List<Book>? Books { get; set; } = new();
     }
 }

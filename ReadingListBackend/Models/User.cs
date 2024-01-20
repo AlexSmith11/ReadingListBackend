@@ -9,6 +9,6 @@ namespace ReadingListBackend.Models
         public int Id { get; set; }
         public string Username { get; set; }
         public string Email { get; set; }
-        public List<BookList> BookLists { get; set; } = new();
+        public List<BookList>? BookLists { get; set; } = new();
     }
 }
