@@ -39,6 +39,7 @@ namespace ReadingListBackend.Controllers
         public async Task<ActionResult<User>> Create([FromBody] UserCreateRequest userRequest)
         {
             if (userRequest == null) return BadRequest("Invalid request");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var user = new User
             {
@@ -46,7 +47,7 @@ namespace ReadingListBackend.Controllers
                 Email = userRequest.Email,
             };
 
-            _context.Users.Add(user);
+            await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(Get), new {id = user.Id}, user);
@@ -55,6 +56,8 @@ namespace ReadingListBackend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UserUpdateRequest updateUserRequest)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
 
