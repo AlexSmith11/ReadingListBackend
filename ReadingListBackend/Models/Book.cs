@@ -13,7 +13,6 @@ namespace ReadingListBackend.Models
         public Author Author { get; set; }
         public int GenreId { get; set; }
         public Genre Genre { get; set; }
-        public int ListId { get; set; }
-        public List List { get; set; }
+        public List<UserListBook> UserListBooks { get; set; } = new();
     }
 }

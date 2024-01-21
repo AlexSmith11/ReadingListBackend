@@ -26,6 +26,12 @@ namespace ReadingListBackend.Database
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
             
+            modelBuilder.Entity<UserListBook>()
+                .HasOne(ulb => ulb.User)
+                .WithMany()
+                .HasForeignKey(ulb => ulb.UserId);
+
+            
             // Book and Author many-to-one relationship
             modelBuilder.Entity<Book>()
                 .HasOne(b => b.Author)
@@ -33,12 +39,16 @@ namespace ReadingListBackend.Database
                 .HasForeignKey(b => b.AuthorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Book and List many-to-one relationship 
-            modelBuilder.Entity<Book>()
-                .HasOne(b => b.List)
-                .WithMany(l => l.Books)
-                .HasForeignKey(b => b.ListId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // Book and List relationships 
+            modelBuilder.Entity<UserListBook>()
+                .HasOne(ulb => ulb.Book)
+                .WithMany(book => book.UserListBooks)
+                .HasForeignKey(ulb => ulb.BookId);
+
+            modelBuilder.Entity<UserListBook>()
+                .HasOne(ulb => ulb.List)
+                .WithMany() // No navigation property back to UserListBook
+                .HasForeignKey(ulb => ulb.ListId);
 
             // Book and Genre many-to-one relationship 
             modelBuilder.Entity<Book>()
