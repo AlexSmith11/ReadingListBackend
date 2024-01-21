@@ -59,9 +59,34 @@ namespace ReadingListBackend.Controllers
         }
         
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBook(int id, Book book)
+        public async Task<IActionResult> Update(int id, BookUpdateRequest bookUpdateRequest)
         {
+            var book = await _context.Books.FindAsync(id);
+            
+            if (book == null) return NotFound();
             if (id != book.Id) return BadRequest();
+            
+            // update title
+            book.Title = bookUpdateRequest.Title;
+            
+            // update author
+            if (bookUpdateRequest.AuthorId.HasValue)
+            {
+                var authorExists = await _context.Authors.AnyAsync(a => a.Id == bookUpdateRequest.AuthorId);
+                if (!authorExists) return BadRequest("Invalid AuthorId");
+
+                book.AuthorId = bookUpdateRequest.AuthorId.Value;
+            }
+            
+            // update genre
+            if (bookUpdateRequest.GenreId.HasValue)
+            {
+                var genreExists = await _context.Genres.AnyAsync(g => g.Id == bookUpdateRequest.GenreId);
+                if (!genreExists) return BadRequest("Invalid GenreId");
+
+                book.GenreId = bookUpdateRequest.GenreId.Value;
+            }
+            
             _context.Entry(book).State = EntityState.Modified;
 
             try
@@ -78,7 +103,7 @@ namespace ReadingListBackend.Controllers
         }
         
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBook(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             var book = await _context.Books.FindAsync(id);
             if (book == null) return NotFound();
