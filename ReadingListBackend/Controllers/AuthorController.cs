@@ -8,6 +8,8 @@ using ReadingListBackend.Models;
 
 namespace ReadingListBackend.Controllers
 {
+    [ApiController]
+    [Route("api/authors")]
     public class AuthorController : ControllerBase
     {
         private readonly AppDbContext _context;
