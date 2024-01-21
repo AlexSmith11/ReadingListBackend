@@ -4,9 +4,8 @@ namespace ReadingListBackend.Requests
 {
     public class BookUpdateRequest
     {
-        [Required]
         [StringLength(100, ErrorMessage = "Title cannot exceed 100 characters")]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Invalid AuthorId")]
         public int? AuthorId { get; set; }

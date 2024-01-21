@@ -67,8 +67,8 @@ namespace ReadingListBackend.Controllers
             if (id != book.Id) return BadRequest();
             
             // update title
-            book.Title = bookUpdateRequest.Title;
-            
+            if (!string.IsNullOrEmpty(bookUpdateRequest.Title)) book.Title = bookUpdateRequest.Title;
+
             // update author
             if (bookUpdateRequest.AuthorId.HasValue)
             {

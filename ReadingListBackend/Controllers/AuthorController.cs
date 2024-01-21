@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
+using ReadingListBackend.Requests;
 
 namespace ReadingListBackend.Controllers
 {
@@ -35,8 +36,17 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Author>> Create(Author author)
+        public async Task<ActionResult<Author>> Create(AuthorCreateRequest authorRequest)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var author = new Author
+            {
+                Name = authorRequest.Name,
+                Age = authorRequest.Age,
+                Country = authorRequest.Country
+            };
+
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
 
@@ -44,10 +54,17 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Author author)
+        public async Task<IActionResult> Update(int id, AuthorUpdateRequest authorUpdateRequest)
         {
+            var author = await _context.Authors.FindAsync(id);
+            if (author == null) return NotFound();
             if (id != author.Id) return BadRequest();
-
+            
+            // update values if they have a new value given
+            if (!string.IsNullOrEmpty(authorUpdateRequest.Name)) author.Name = authorUpdateRequest.Name;
+            if (authorUpdateRequest.Age.HasValue) author.Age = authorUpdateRequest.Age.Value;
+            if (!string.IsNullOrEmpty(authorUpdateRequest.Country)) author.Country = authorUpdateRequest.Country;
+            
             _context.Entry(author).State = EntityState.Modified;
 
             try
