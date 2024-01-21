@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ReadingListBackend.Models
 {
-    public class BookList
+    public class List
     {
         [Key]
         public int Id { get; set; }

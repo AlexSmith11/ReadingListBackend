@@ -1,6 +1,6 @@
 ﻿namespace ReadingListBackend.Controllers
 {
-    public class BookListController
+    public class ListBookController
     {
         
     }

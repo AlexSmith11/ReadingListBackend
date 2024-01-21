@@ -6,7 +6,7 @@ namespace ReadingListBackend.Database
     public class AppDbContext : DbContext
     {
         public DbSet<User> Users { get; set; }
-        public DbSet<BookList> BookLists { get; set; }
+        public DbSet<List> Lists { get; set; }
         public DbSet<Book> Books { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Author> Authors { get; set; }
@@ -18,10 +18,10 @@ namespace ReadingListBackend.Database
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // User to BookList one-to-many relationship 
-            modelBuilder.Entity<BookList>()
-                .HasOne(bl => bl.User)
-                .WithMany(u => u.BookLists)
+            // User to List one-to-many relationship 
+            modelBuilder.Entity<List>()
+                .HasOne(l => l.User)
+                .WithMany(u => u.Lists)
                 .HasForeignKey(bl => bl.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
@@ -33,11 +33,11 @@ namespace ReadingListBackend.Database
                 .HasForeignKey(b => b.AuthorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Book and BookList many-to-one relationship 
+            // Book and List many-to-one relationship 
             modelBuilder.Entity<Book>()
-                .HasOne(b => b.BookList)
-                .WithMany(bl => bl.Books)
-                .HasForeignKey(b => b.BookListId)
+                .HasOne(b => b.List)
+                .WithMany(l => l.Books)
+                .HasForeignKey(b => b.ListId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Book and Genre many-to-one relationship 
