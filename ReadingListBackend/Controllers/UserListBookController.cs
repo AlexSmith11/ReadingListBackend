@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
+using ReadingListBackend.Models;
 
 namespace ReadingListBackend.Controllers
 {
@@ -15,46 +18,49 @@ namespace ReadingListBackend.Controllers
             _context = context;
         }
 
-        // ... (Existing methods)
-
-        // Mark a book as read for a user on a specific list
-        [HttpPut("mark-read/{userId}/{listId}/{bookId}")]
-        public async Task<IActionResult> MarkBookAsRead(int userId, int listId, int bookId)
+        [HttpPost]
+        public async Task<ActionResult<UserListBook>> PostUserListBook(UserListBook userListBook)
         {
-            var userListBook = await _context.UserListBooks
-                .Where(ulb => ulb.BookId == bookId && ulb.ListId == listId && ulb.UserId == userId)
-                .FirstOrDefaultAsync();
-
-            if (userListBook == null)
-            {
-                return NotFound();
-            }
-
-            userListBook.IsRead = true;
-
+            _context.UserListBooks.Add(userListBook);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            // Return a minimal response, as the primary interaction might happen through ListController
+            return Ok();
         }
 
-        // Update the order of a book on a list for a user
-        [HttpPut("update-order/{userId}/{listId}/{bookId}/{newOrder}")]
-        public async Task<IActionResult> UpdateBookOrder(int userId, int listId, int bookId, int newOrder)
+        [HttpPut("{bookId}/{listId}/{userId}")]
+        public async Task<IActionResult> PutUserListBook(int bookId, int listId, int userId, UserListBook userListBook)
         {
-            var userListBook = await _context.UserListBooks
-                .Where(ulb => ulb.BookId == bookId && ulb.ListId == listId && ulb.UserId == userId)
-                .FirstOrDefaultAsync();
-
-            if (userListBook == null)
+            if (bookId != userListBook.BookId || listId != userListBook.ListId || userId != userListBook.UserId)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            userListBook.Order = newOrder;
+            _context.Entry(userListBook).State = EntityState.Modified;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UserListBookExists(bookId, listId, userId))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
-            return NoContent();
+            // Return a minimal response, as the primary interaction might happen through ListController
+            return Ok();
+        }
+
+        private bool UserListBookExists(int bookId, int listId, int userId)
+        {
+            return _context.UserListBooks.Any(ulb => ulb.BookId == bookId && ulb.ListId == listId && ulb.UserId == userId);
         }
     }
 }
