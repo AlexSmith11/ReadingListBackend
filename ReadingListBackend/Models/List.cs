@@ -11,6 +11,6 @@ namespace ReadingListBackend.Models
 
         public int UserId { get; set; }
         public User User { get; set; }
-        public List<UserListBook> UserListBooks { get; set; } = new();
+        public List<ListBook> ListBooks { get; set; } = new();
     }
 }

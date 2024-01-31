@@ -10,7 +10,7 @@ namespace ReadingListBackend.Database
         public DbSet<Book> Books { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Author> Authors { get; set; }
-        public DbSet<UserListBook> UserListBooks { get; set; }
+        public DbSet<ListBook> ListBooks { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
@@ -35,26 +35,7 @@ namespace ReadingListBackend.Database
                 .WithMany(a => a.Books)
                 .HasForeignKey(b => b.AuthorId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // UserListBook relationships
-            modelBuilder.Entity<UserListBook>()
-                .HasKey(ulb => new { ulb.BookId, ulb.ListId, ulb.UserId });
-
-            modelBuilder.Entity<UserListBook>()
-                .HasOne(ulb => ulb.User)
-                .WithMany()
-                .HasForeignKey(ulb => ulb.UserId);
-
-            modelBuilder.Entity<UserListBook>()
-                .HasOne(ulb => ulb.List)
-                .WithMany(list => list.UserListBooks)
-                .HasForeignKey(ulb => ulb.ListId);
-
-            modelBuilder.Entity<UserListBook>()
-                .HasOne(ulb => ulb.Book)
-                .WithMany(book => book.UserListBooks)
-                .HasForeignKey(ulb => ulb.BookId);
-
+            
             // Book to Genre relationship
             modelBuilder.Entity<Book>()
                 .HasOne(b => b.Genre)
@@ -62,7 +43,23 @@ namespace ReadingListBackend.Database
                 .HasForeignKey(b => b.GenreId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Other entity configurations...
+            // ListBook relationships
+            modelBuilder.Entity<ListBook>()
+                .HasKey(ulb => new { ulb.BookId, ulb.ListId });
+
+            //      ListBook to List
+            modelBuilder.Entity<ListBook>()
+                .HasOne(ulb => ulb.List)
+                .WithMany(list => list.ListBooks)
+                .HasForeignKey(ulb => ulb.ListId)
+                .IsRequired();
+            
+            //      ListBook to Book
+            modelBuilder.Entity<ListBook>()
+                .HasOne(ulb => ulb.Book)
+                .WithMany(book => book.ListBooks)
+                .HasForeignKey(ulb => ulb.BookId)
+                .IsRequired();
         }
 
 
