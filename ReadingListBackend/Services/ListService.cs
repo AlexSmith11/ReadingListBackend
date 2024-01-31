@@ -13,6 +13,28 @@ namespace ReadingListBackend.Services
         {
             _context = context;
         }
+        
+        public async Task<bool> CreateList(string name, int userId)
+        {
+            // Check if the user exists (you may want to perform additional validation)
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return false;
+            }
+
+            var newList = new List
+            {
+                Name = name,
+                UserId = userId
+            };
+
+            // Add the new list to the database
+            await _context.Lists.AddAsync(newList);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
 
         public async Task<bool> AddBookToList(int listId, int bookId, bool isRead, int position)
         {
