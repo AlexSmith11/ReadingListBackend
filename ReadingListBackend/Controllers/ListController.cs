@@ -101,23 +101,6 @@ namespace ReadingListBackend.Controllers
         }
 
         /// <summary>
-        /// Add a Book to a List using ListService
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        [HttpPost("AddBookToList")]
-        public async Task<IActionResult> AddBookToList([FromBody] AddBookToListCreateRequest request)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var result =
-                await _listService.AddBookToList(request.ListId, request.BookId, request.IsRead, request.Position);
-            if (result) return Ok("Book added to list successfully.");
-
-            return BadRequest("Failed to add the book to the list.");
-        }
-
-        /// <summary>
         /// Delete a List
         /// TODO: Refactor into service
         /// </summary>
@@ -138,23 +121,49 @@ namespace ReadingListBackend.Controllers
             return NoContent();
         }
 
+        // book to list methods
+
+        /// <summary>
+        /// Add a Book to a List using ListService
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost("AddBookToList")]
+        public async Task<IActionResult> AddBookToList([FromBody] AddBookToListCreateRequest request)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var result =
+                await _listService.AddBookToList(request.ListId, request.BookId, request.IsRead, request.Position);
+            if (result) return Ok("Book added to list successfully.");
+
+            return BadRequest("Failed to add the book to the list.");
+        }
+
         [HttpDelete("RemoveBookFromList")]
         public async Task<IActionResult> RemoveBookFromList([FromBody] RemoveBookFromListDeleteRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var result = await _listService.RemoveBookFromList(request.ListId, request.BookId);
 
-            if (result)
-            {
-                return Ok("Book removed from list successfully.");
-            }
+            if (result) return Ok("Book removed from list successfully.");
 
             return NotFound("Book is not in the list.");
         }
+
+        [HttpPost("UpdateBookPosition")]
+        public async Task<IActionResult> UpdateBookPosition([FromBody] UpdateBookPositionOnListRequest request)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var result = await _listService.UpdateBookPosition(request.ListId, request.BookId, request.NewPosition);
+
+            if (result) return Ok("Book position updated successfully.");
+
+            return NotFound("ListBook not found or update failed.");
+        }
+
+        // helpers
 
         private bool ListExists(int listId)
         {

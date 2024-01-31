@@ -13,7 +13,7 @@ namespace ReadingListBackend.Services
         {
             _context = context;
         }
-        
+
         public async Task<bool> CreateList(string name, int userId)
         {
             // Check if the user exists (you may want to perform additional validation)
@@ -36,23 +36,22 @@ namespace ReadingListBackend.Services
             return true;
         }
 
-        public async Task<bool> AddBookToList(int listId, int bookId, bool isRead, int position)
+        public async Task<bool> AddBookToList(int listId, int bookId, bool isRead, int? position = null)
         {
             var list = await _context.Lists.FindAsync(listId);
             var book = await _context.Books.FindAsync(bookId);
 
             // check if List and Book exist
-            if (list == null || book == null)
-            {
-                return false;
-            }
+            if (list == null || book == null) return false;
+
+            position ??= list.ListBooks.Count + 1;
 
             var userListBook = new ListBook
             {
                 ListId = listId,
                 BookId = bookId,
                 IsRead = isRead,
-                Position = position
+                Position = position.Value
             };
 
             await _context.ListBooks.AddAsync(userListBook);
@@ -60,7 +59,22 @@ namespace ReadingListBackend.Services
 
             return true;
         }
-        
+
+        public async Task<bool> UpdateBookPosition(int listId, int bookId, int newPosition)
+        {
+            // Find the ListBook entry to update
+            var listBook = await _context.ListBooks
+                .FirstOrDefaultAsync(ulb => ulb.ListId == listId && ulb.BookId == bookId);
+
+            if (listBook == null) return false;
+
+            // Update the position
+            listBook.Position = newPosition;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<bool> RemoveBookFromList(int listId, int bookId)
         {
             var listBook = await _context.ListBooks
