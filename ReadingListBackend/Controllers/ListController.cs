@@ -74,7 +74,7 @@ namespace ReadingListBackend.Controllers
 
         /// <summary>
         /// Create a new List
-        /// TODO: Refactor to include 
+        /// TODO: Refactor to include the ListResponse class instead 
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
@@ -93,6 +93,7 @@ namespace ReadingListBackend.Controllers
         /// <summary>
         /// Edit a given list
         /// TODO: Refactor into service
+        /// TODO: Refactor to include the ListResponse class instead 
         /// </summary>
         /// <param name="listId"></param>
         /// <param name="list"></param>

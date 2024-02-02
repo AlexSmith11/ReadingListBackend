@@ -68,7 +68,7 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UserUpdateRequest updateUserRequest)
+        public async Task<ActionResult<UserResponse>> Update(int id, [FromBody] UserUpdateRequest updateUserRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             
@@ -90,8 +90,10 @@ namespace ReadingListBackend.Controllers
                 if (!UserExists(id)) return NotFound();
                 else throw;
             }
+            
+            var userAuthor = _mapper.Map<AuthorResponse>(user);
 
-            return NoContent();
+            return Ok(userAuthor);
         }
 
         [HttpDelete("{id}")]

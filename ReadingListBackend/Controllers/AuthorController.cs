@@ -69,7 +69,7 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, AuthorUpdateRequest authorUpdateRequest)
+        public async Task<ActionResult<AuthorResponse>> Update(int id, AuthorUpdateRequest authorUpdateRequest)
         {
             var author = await _context.Authors.FindAsync(id);
             if (author == null) return NotFound();
@@ -91,8 +91,10 @@ namespace ReadingListBackend.Controllers
                 if (!AuthorExists(id)) return NotFound();
                 else throw;
             }
+            
+            var updatedAuthor = _mapper.Map<AuthorResponse>(author);
 
-            return NoContent();
+            return Ok(updatedAuthor);
         }
 
         [HttpDelete("{id}")]

@@ -75,7 +75,7 @@ namespace ReadingListBackend.Controllers
         }
         
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, BookUpdateRequest bookUpdateRequest)
+        public async Task<ActionResult<BookResponse>> Update(int id, BookUpdateRequest bookUpdateRequest)
         {
             var book = await _context.Books.FindAsync(id);
             
@@ -114,8 +114,10 @@ namespace ReadingListBackend.Controllers
                 if (!BookExists(id)) return NotFound();
                 else throw;
             }
+            
+            var updatedBook = _mapper.Map<AuthorResponse>(book);
 
-            return NoContent();
+            return Ok(updatedBook);
         }
         
         [HttpDelete("{id}")]

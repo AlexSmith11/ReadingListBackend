@@ -70,12 +70,13 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGenre(int id, GenreUpdateRequest genreUpdateRequest)
+        public async Task<ActionResult<GenreResponse>> UpdateGenre(int id, GenreUpdateRequest genreUpdateRequest)
         {
             var genre = await _context.Genres.FindAsync(id);
             if (genre == null) return NotFound();
 
-            if (!string.IsNullOrEmpty(genreUpdateRequest.Name)) genre.Name = genreUpdateRequest.Name;
+            if (!string.IsNullOrEmpty(genreUpdateRequest.Name)) 
+                genre.Name = genreUpdateRequest.Name;
             
             _context.Entry(genre).State = EntityState.Modified;
 
@@ -88,8 +89,10 @@ namespace ReadingListBackend.Controllers
                 if (!GenreExists(id)) return NotFound();
                 else throw;
             }
+            
+            var updatedGenre = _mapper.Map<GenreResponse>(genre);
 
-            return NoContent();
+            return Ok(updatedGenre);
         }
 
         [HttpDelete("{id}")]
