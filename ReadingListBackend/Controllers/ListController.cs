@@ -74,6 +74,7 @@ namespace ReadingListBackend.Controllers
 
         /// <summary>
         /// Create a new List
+        /// TODO: Refactor to include 
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>

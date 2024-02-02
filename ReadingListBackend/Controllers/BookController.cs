@@ -49,7 +49,7 @@ namespace ReadingListBackend.Controllers
         }
         
         [HttpPost]
-        public async Task<ActionResult<Book>> Create(BookCreateRequest bookRequest)
+        public async Task<ActionResult<BookResponse>> Create(BookCreateRequest bookRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             
@@ -68,8 +68,10 @@ namespace ReadingListBackend.Controllers
             
             await _context.Books.AddAsync(book);
             await _context.SaveChangesAsync();
+            
+            var bookResponse = _mapper.Map<AuthorResponse>(book);
 
-            return CreatedAtAction(nameof(Get), new { id = book.Id }, book);
+            return CreatedAtAction(nameof(Get), new { id = book.Id }, bookResponse);
         }
         
         [HttpPut("{id}")]

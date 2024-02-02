@@ -49,9 +49,8 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<User>> Create([FromBody] UserCreateRequest userRequest)
+        public async Task<ActionResult<UserResponse>> Create([FromBody] UserCreateRequest userRequest)
         {
-            if (userRequest == null) return BadRequest("Invalid request");
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var user = new User
@@ -62,8 +61,10 @@ namespace ReadingListBackend.Controllers
 
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
+            
+            var userResponse = _mapper.Map<UserResponse>(user);
 
-            return CreatedAtAction(nameof(Get), new {id = user.Id}, user);
+            return CreatedAtAction(nameof(Get), new {id = user.Id}, userResponse);
         }
 
         [HttpPut("{id}")]

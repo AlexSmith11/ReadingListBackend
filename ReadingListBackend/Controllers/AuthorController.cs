@@ -49,7 +49,7 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Author>> Create(AuthorCreateRequest authorRequest)
+        public async Task<ActionResult<AuthorResponse>> Create(AuthorCreateRequest authorRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -60,10 +60,12 @@ namespace ReadingListBackend.Controllers
                 Country = authorRequest.Country
             };
 
-            _context.Authors.Add(author);
+            await _context.Authors.AddAsync(author);
             await _context.SaveChangesAsync();
+            
+            var authorResponse = _mapper.Map<AuthorResponse>(author);
 
-            return CreatedAtAction(nameof(Get), new { id = author.Id }, author);
+            return CreatedAtAction(nameof(Get), new { id = author.Id }, authorResponse);
         }
 
         [HttpPut("{id}")]

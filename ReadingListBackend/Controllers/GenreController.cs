@@ -55,7 +55,7 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Genre>> Create(GenreCreateRequest genreRequest)
+        public async Task<ActionResult<GenreResponse>> Create(GenreCreateRequest genreRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -63,8 +63,10 @@ namespace ReadingListBackend.Controllers
 
             await _context.Genres.AddAsync(genre);
             await _context.SaveChangesAsync();
+            
+            var genreResponse = _mapper.Map<GenreResponse>(genre);
 
-            return CreatedAtAction(nameof(Get), new {id = genre.Id}, genre);
+            return CreatedAtAction(nameof(Get), new {id = genre.Id}, genreResponse);
         }
 
         [HttpPut("{id}")]
