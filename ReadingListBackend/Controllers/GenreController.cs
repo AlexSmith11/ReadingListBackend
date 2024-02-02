@@ -28,9 +28,13 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Genre>>> Get()
+        public async Task<ActionResult<IEnumerable<GenreResponse>>> Get()
         {
-            return await _context.Genres.ToListAsync();
+            var genres = await _context.Genres
+                .ProjectTo<GenreResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(genres);
         }
 
         /// <summary>
