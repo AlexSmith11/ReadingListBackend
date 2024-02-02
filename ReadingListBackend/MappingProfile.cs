@@ -11,7 +11,8 @@ namespace ReadingListBackend
             CreateMap<User, UserResponse>();
             CreateMap<Author, AuthorResponse>();
             CreateMap<Genre, GenreResponse>();
-            CreateMap<Book, BookResponse>();
+            CreateMap<Book, BookResponse>()
+                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Author.Name));
             CreateMap<List, ListResponse>();
         }
     }

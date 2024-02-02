@@ -3,11 +3,14 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 
 namespace ReadingListBackend.Controllers
 {
@@ -16,10 +19,12 @@ namespace ReadingListBackend.Controllers
     public class GenreController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public GenreController(AppDbContext context)
+        public GenreController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -29,17 +34,20 @@ namespace ReadingListBackend.Controllers
         }
 
         /// <summary>
-        /// TODO: Create DTO's / response objects for each of these, as this will prevent object cycles
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Genre>> Get(int id)
+        public async Task<ActionResult<GenreResponse>> Get(int id)
         {
-            var genre = _context.Genres.Include(g => g.Books).FirstOrDefault(g => g.Id == id);
-            if (genre == null) return NotFound();
+            var genreResponse  = await _context.Genres
+                .Where(g => g.Id == id)
+                .ProjectTo<GenreResponse>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
 
-            return Ok(JsonSerializer.Serialize(genre));
+            if (genreResponse  == null) return NotFound();
+
+            return Ok(genreResponse);
         }
 
         [HttpPost]
