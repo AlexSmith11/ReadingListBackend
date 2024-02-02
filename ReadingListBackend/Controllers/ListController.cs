@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 using ReadingListBackend.Services;
 
 namespace ReadingListBackend.Controllers
@@ -27,33 +29,47 @@ namespace ReadingListBackend.Controllers
             _listService = listService ?? throw new ArgumentNullException(nameof(listService));
         }
 
-        // should change this to only send list of names and id's for top level ui
+        /// <summary>
+        /// Returns only a top level view of the lists - this does not return a tree structure including books, etc
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<List>>> Get()
+        public async Task<ActionResult<IEnumerable<ListSummaryResponse>>> Get()
         {
-            var lists = await _context.Lists.ToListAsync();
-            return lists;
+            var lists = await _context.Lists
+                .Select(list => new ListSummaryResponse
+                {
+                    Id = list.Id,
+                    Name = list.Name
+                })
+                .ToListAsync();
+
+            return Ok(lists);
         }
 
         /// <summary>
         /// Get Single List
         /// TODO: Refactor into service
         /// </summary>
-        /// <param name="listId"></param>
+        /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet("{listId}")]
-        public async Task<ActionResult<List>> Get(int listId)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ListResponse>> Get(int id)
         {
             var list = await _context.Lists
-                .Include(l => l.ListBooks) // include ListBooks for eager loading
-                .FirstOrDefaultAsync(l => l.Id == listId);
+                .Include(l => l.ListBooks)
+                .ThenInclude(lb => lb.Book)
+                .ThenInclude(b => b.Author)
+                .Include(l => l.ListBooks)
+                .ThenInclude(lb => lb.Book)
+                .ThenInclude(b => b.Genre)
+                .FirstOrDefaultAsync(l => l.Id == id);
 
-            if (list == null)
-            {
-                return NotFound();
-            }
+            if (list == null) return NotFound();
 
-            return list;
+            var listResponse = _mapper.Map<ListResponse>(list);
+
+            return listResponse;
         }
 
         /// <summary>
