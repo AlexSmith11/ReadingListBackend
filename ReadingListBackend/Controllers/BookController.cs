@@ -48,6 +48,7 @@ namespace ReadingListBackend.Controllers
             var book = new Book
             {
                 Title = bookRequest.Title,
+                PageCount = bookRequest.PageCount,
                 AuthorId = bookRequest.AuthorId,
                 GenreId = bookRequest.GenreId,
             };

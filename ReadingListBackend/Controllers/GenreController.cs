@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,12 +28,18 @@ namespace ReadingListBackend.Controllers
             return await _context.Genres.ToListAsync();
         }
 
+        /// <summary>
+        /// TODO: Create DTO's / response objects for each of these, as this will prevent object cycles
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<Genre>> Get(int id)
         {
-            var genre = await _context.Genres.FindAsync(id);
+            var genre = _context.Genres.Include(g => g.Books).FirstOrDefault(g => g.Id == id);
             if (genre == null) return NotFound();
-            return genre;
+
+            return Ok(JsonSerializer.Serialize(genre));
         }
 
         [HttpPost]

@@ -9,6 +9,8 @@ namespace ReadingListBackend.Requests
     {
         [Required(ErrorMessage = "Title is required")]
         public string Title { get; set; }
+        [Required(ErrorMessage = "Page count is required")]
+        public int PageCount { get; set; }
 
         [Required(ErrorMessage = "AuthorId is required")]
         [Range(1, int.MaxValue, ErrorMessage = "Invalid AuthorId")]
