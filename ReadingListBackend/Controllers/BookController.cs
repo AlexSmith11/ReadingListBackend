@@ -2,11 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 
 namespace ReadingListBackend.Controllers
 {
@@ -24,15 +26,23 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Book>>> Get()
+        public async Task<ActionResult<IEnumerable<BookResponse>>> Get()
         {
-            return await _context.Books.ToListAsync();
+            var books = await _context.Books
+                .ProjectTo<BookResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(books);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Book>> Get(int id)
+        public async Task<ActionResult<BookResponse>> Get(int id)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book  = await _context.Books
+                .Where(b => b.Id == id)
+                .ProjectTo<BookResponse>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+            
             if (book == null) return NotFound();
 
             return book;
