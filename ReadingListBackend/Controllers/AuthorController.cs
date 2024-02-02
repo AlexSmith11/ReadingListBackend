@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
@@ -14,10 +15,12 @@ namespace ReadingListBackend.Controllers
     public class AuthorController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public AuthorController(AppDbContext context)
+        public AuthorController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
         
         [HttpGet]
