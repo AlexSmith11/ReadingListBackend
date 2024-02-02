@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ReadingListBackend.Database;
 
@@ -10,9 +11,11 @@ using ReadingListBackend.Database;
 namespace ReadingListBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240120031251_UserControllerImplemented")]
+    partial class UserControllerImplemented
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,11 +59,15 @@ namespace ReadingListBackend.Migrations
                     b.Property<int>("AuthorId")
                         .HasColumnType("int");
 
+                    b.Property<int>("BookListId")
+                        .HasColumnType("int");
+
                     b.Property<int>("GenreId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PageCount")
-                        .HasColumnType("int");
+                    b.Property<string>("PageCount")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -70,9 +77,29 @@ namespace ReadingListBackend.Migrations
 
                     b.HasIndex("AuthorId");
 
+                    b.HasIndex("BookListId");
+
                     b.HasIndex("GenreId");
 
                     b.ToTable("Books");
+                });
+
+            modelBuilder.Entity("ReadingListBackend.Models.BookList", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BookLists");
                 });
 
             modelBuilder.Entity("ReadingListBackend.Models.Genre", b =>
@@ -83,59 +110,13 @@ namespace ReadingListBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Name")
+                    b.Property<string>("GenreName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Genres");
-                });
-
-            modelBuilder.Entity("ReadingListBackend.Models.List", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Lists");
-                });
-
-            modelBuilder.Entity("ReadingListBackend.Models.ListBook", b =>
-                {
-                    b.Property<int>("BookId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ListId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Position")
-                        .HasColumnType("int");
-
-                    b.HasKey("BookId", "ListId");
-
-                    b.HasIndex("ListId");
-
-                    b.ToTable("ListBooks");
                 });
 
             modelBuilder.Entity("ReadingListBackend.Models.User", b =>
@@ -167,6 +148,12 @@ namespace ReadingListBackend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ReadingListBackend.Models.BookList", "BookList")
+                        .WithMany("Books")
+                        .HasForeignKey("BookListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ReadingListBackend.Models.Genre", "Genre")
                         .WithMany("Books")
                         .HasForeignKey("GenreId")
@@ -175,13 +162,15 @@ namespace ReadingListBackend.Migrations
 
                     b.Navigation("Author");
 
+                    b.Navigation("BookList");
+
                     b.Navigation("Genre");
                 });
 
-            modelBuilder.Entity("ReadingListBackend.Models.List", b =>
+            modelBuilder.Entity("ReadingListBackend.Models.BookList", b =>
                 {
                     b.HasOne("ReadingListBackend.Models.User", "User")
-                        .WithMany("Lists")
+                        .WithMany("BookLists")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -189,33 +178,14 @@ namespace ReadingListBackend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ReadingListBackend.Models.ListBook", b =>
-                {
-                    b.HasOne("ReadingListBackend.Models.Book", "Book")
-                        .WithMany("ListBooks")
-                        .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ReadingListBackend.Models.List", "List")
-                        .WithMany("ListBooks")
-                        .HasForeignKey("ListId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Book");
-
-                    b.Navigation("List");
-                });
-
             modelBuilder.Entity("ReadingListBackend.Models.Author", b =>
                 {
                     b.Navigation("Books");
                 });
 
-            modelBuilder.Entity("ReadingListBackend.Models.Book", b =>
+            modelBuilder.Entity("ReadingListBackend.Models.BookList", b =>
                 {
-                    b.Navigation("ListBooks");
+                    b.Navigation("Books");
                 });
 
             modelBuilder.Entity("ReadingListBackend.Models.Genre", b =>
@@ -223,14 +193,9 @@ namespace ReadingListBackend.Migrations
                     b.Navigation("Books");
                 });
 
-            modelBuilder.Entity("ReadingListBackend.Models.List", b =>
-                {
-                    b.Navigation("ListBooks");
-                });
-
             modelBuilder.Entity("ReadingListBackend.Models.User", b =>
                 {
-                    b.Navigation("Lists");
+                    b.Navigation("BookLists");
                 });
 #pragma warning restore 612, 618
         }
