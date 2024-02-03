@@ -10,6 +10,7 @@ using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
 using ReadingListBackend.Responses;
 using ReadingListBackend.Services;
+using ReadingListBackend.Utilities;
 
 namespace ReadingListBackend.Controllers
 {
@@ -31,19 +32,34 @@ namespace ReadingListBackend.Controllers
         /// <summary>
         /// Returns only a top level view of the lists - this does not return a tree structure including books, etc
         /// </summary>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ListSummaryResponse>>> Get()
+        public async Task<ActionResult<PaginatedResponse<ListSummaryResponse>>> GetLists(int page = 1, int pageSize = 10)
         {
-            var lists = await _context.Lists
+            var query = _context.Lists
                 .Select(list => new ListSummaryResponse
                 {
                     Id = list.Id,
                     Name = list.Name
-                })
+                });
+
+            var totalItems = await query.CountAsync();
+            var lists = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return Ok(lists);
+            var response = new PaginatedResponse<ListSummaryResponse>
+            {
+                Items = lists,
+                TotalItems = totalItems,
+                PageNumber = page,
+                PageSize = pageSize
+            };
+
+            return Ok(response);
         }
 
         /// <summary>

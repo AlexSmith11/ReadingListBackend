@@ -9,6 +9,7 @@ using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
 using ReadingListBackend.Responses;
+using ReadingListBackend.Utilities;
 
 namespace ReadingListBackend.Controllers
 {
@@ -26,13 +27,25 @@ namespace ReadingListBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserResponse>>> Get()
+        public async Task<ActionResult<PaginatedResponse<UserResponse>>> GetUsers(int page = 1, int pageSize = 10)
         {
-            var users = await _context.Users
+            var query = _context.Users.AsQueryable();
+            var totalItems = await query.CountAsync();
+            var users = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return Ok(users);
+            var response = new PaginatedResponse<UserResponse>
+            {
+                Items = users,
+                TotalItems = totalItems,
+                PageNumber = page,
+                PageSize = pageSize
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("{id}")]
