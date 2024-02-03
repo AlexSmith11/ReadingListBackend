@@ -26,12 +26,26 @@ builder.Services.AddMvc();
 // configure DB connection
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// create env
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// error handling
+app.UseExceptionHandler("/error");
+app.UseStatusCodePagesWithReExecute("/error/{0}");
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllerRoute(
+        name: "error",
+        pattern: "/error/{statusCode}",
+        defaults: new { controller = "Error", action = "HandleError" }
+    );
+});
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
