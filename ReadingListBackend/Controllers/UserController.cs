@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 
 namespace ReadingListBackend.Controllers
 {
@@ -14,31 +17,40 @@ namespace ReadingListBackend.Controllers
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public UserController(AppDbContext context)
+        public UserController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> Get()
+        public async Task<ActionResult<IEnumerable<UserResponse>>> Get()
         {
-            return await _context.Users.ToListAsync();
+            var users = await _context.Users
+                .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(users);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> Get(int id)
+        public async Task<ActionResult<UserResponse>> Get(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user  = await _context.Users
+                .Where(b => b.Id == id)
+                .ProjectTo<UserResponse>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+            
             if (user == null) return NotFound();
 
             return user;
         }
 
         [HttpPost]
-        public async Task<ActionResult<User>> Create([FromBody] UserCreateRequest userRequest)
+        public async Task<ActionResult<UserResponse>> Create([FromBody] UserCreateRequest userRequest)
         {
-            if (userRequest == null) return BadRequest("Invalid request");
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var user = new User
@@ -49,12 +61,14 @@ namespace ReadingListBackend.Controllers
 
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
+            
+            var userResponse = _mapper.Map<UserResponse>(user);
 
-            return CreatedAtAction(nameof(Get), new {id = user.Id}, user);
+            return CreatedAtAction(nameof(Get), new {id = user.Id}, userResponse);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UserUpdateRequest updateUserRequest)
+        public async Task<ActionResult<UserResponse>> Update(int id, [FromBody] UserUpdateRequest updateUserRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             
@@ -76,8 +90,10 @@ namespace ReadingListBackend.Controllers
                 if (!UserExists(id)) return NotFound();
                 else throw;
             }
+            
+            var userAuthor = _mapper.Map<AuthorResponse>(user);
 
-            return NoContent();
+            return Ok(userAuthor);
         }
 
         [HttpDelete("{id}")]

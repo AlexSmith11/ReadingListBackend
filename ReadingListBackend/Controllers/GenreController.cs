@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 
 namespace ReadingListBackend.Controllers
 {
@@ -16,34 +17,39 @@ namespace ReadingListBackend.Controllers
     public class GenreController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public GenreController(AppDbContext context)
+        public GenreController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Genre>>> Get()
+        public async Task<ActionResult<IEnumerable<GenreResponse>>> Get()
         {
-            return await _context.Genres.ToListAsync();
+            var genres = await _context.Genres
+                .ProjectTo<GenreResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(genres);
         }
-
-        /// <summary>
-        /// TODO: Create DTO's / response objects for each of these, as this will prevent object cycles
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        
         [HttpGet("{id}")]
-        public async Task<ActionResult<Genre>> Get(int id)
+        public async Task<ActionResult<GenreResponse>> Get(int id)
         {
-            var genre = _context.Genres.Include(g => g.Books).FirstOrDefault(g => g.Id == id);
-            if (genre == null) return NotFound();
+            var genreResponse  = await _context.Genres
+                .Where(g => g.Id == id)
+                .ProjectTo<GenreResponse>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
 
-            return Ok(JsonSerializer.Serialize(genre));
+            if (genreResponse  == null) return NotFound();
+
+            return Ok(genreResponse);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Genre>> Create(GenreCreateRequest genreRequest)
+        public async Task<ActionResult<GenreResponse>> Create(GenreCreateRequest genreRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -51,17 +57,20 @@ namespace ReadingListBackend.Controllers
 
             await _context.Genres.AddAsync(genre);
             await _context.SaveChangesAsync();
+            
+            var genreResponse = _mapper.Map<GenreResponse>(genre);
 
-            return CreatedAtAction(nameof(Get), new {id = genre.Id}, genre);
+            return CreatedAtAction(nameof(Get), new {id = genre.Id}, genreResponse);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGenre(int id, GenreUpdateRequest genreUpdateRequest)
+        public async Task<ActionResult<GenreResponse>> UpdateGenre(int id, GenreUpdateRequest genreUpdateRequest)
         {
             var genre = await _context.Genres.FindAsync(id);
             if (genre == null) return NotFound();
 
-            if (!string.IsNullOrEmpty(genreUpdateRequest.Name)) genre.Name = genreUpdateRequest.Name;
+            if (!string.IsNullOrEmpty(genreUpdateRequest.Name)) 
+                genre.Name = genreUpdateRequest.Name;
             
             _context.Entry(genre).State = EntityState.Modified;
 
@@ -74,8 +83,10 @@ namespace ReadingListBackend.Controllers
                 if (!GenreExists(id)) return NotFound();
                 else throw;
             }
+            
+            var updatedGenre = _mapper.Map<GenreResponse>(genre);
 
-            return NoContent();
+            return Ok(updatedGenre);
         }
 
         [HttpDelete("{id}")]

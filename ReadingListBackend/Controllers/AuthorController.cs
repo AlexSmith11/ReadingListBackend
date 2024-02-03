@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 
 namespace ReadingListBackend.Controllers
 {
@@ -14,29 +17,39 @@ namespace ReadingListBackend.Controllers
     public class AuthorController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public AuthorController(AppDbContext context)
+        public AuthorController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
         
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Author>>> Get()
+        public async Task<ActionResult<IEnumerable<AuthorResponse>>> Get()
         {
-            return await _context.Authors.ToListAsync();
+            var authors = await _context.Authors
+                .ProjectTo<AuthorResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(authors);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Author>> Get(int id)
+        public async Task<ActionResult<AuthorResponse>> Get(int id)
         {
-            var author = await _context.Authors.FindAsync(id);
+            var author  = await _context.Authors
+                .Where(a => a.Id == id)
+                .ProjectTo<AuthorResponse>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+            
             if (author == null) return NotFound();
 
             return author;
         }
 
         [HttpPost]
-        public async Task<ActionResult<Author>> Create(AuthorCreateRequest authorRequest)
+        public async Task<ActionResult<AuthorResponse>> Create(AuthorCreateRequest authorRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -47,14 +60,16 @@ namespace ReadingListBackend.Controllers
                 Country = authorRequest.Country
             };
 
-            _context.Authors.Add(author);
+            await _context.Authors.AddAsync(author);
             await _context.SaveChangesAsync();
+            
+            var authorResponse = _mapper.Map<AuthorResponse>(author);
 
-            return CreatedAtAction(nameof(Get), new { id = author.Id }, author);
+            return CreatedAtAction(nameof(Get), new { id = author.Id }, authorResponse);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, AuthorUpdateRequest authorUpdateRequest)
+        public async Task<ActionResult<AuthorResponse>> Update(int id, AuthorUpdateRequest authorUpdateRequest)
         {
             var author = await _context.Authors.FindAsync(id);
             if (author == null) return NotFound();
@@ -76,8 +91,10 @@ namespace ReadingListBackend.Controllers
                 if (!AuthorExists(id)) return NotFound();
                 else throw;
             }
+            
+            var updatedAuthor = _mapper.Map<AuthorResponse>(author);
 
-            return NoContent();
+            return Ok(updatedAuthor);
         }
 
         [HttpDelete("{id}")]

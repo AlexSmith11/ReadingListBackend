@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 
 namespace ReadingListBackend.Controllers
 {
@@ -14,29 +17,39 @@ namespace ReadingListBackend.Controllers
     public class BookController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public BookController(AppDbContext context)
+        public BookController(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Book>>> Get()
+        public async Task<ActionResult<IEnumerable<BookResponse>>> Get()
         {
-            return await _context.Books.ToListAsync();
+            var books = await _context.Books
+                .ProjectTo<BookResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return Ok(books);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Book>> Get(int id)
+        public async Task<ActionResult<BookResponse>> Get(int id)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book  = await _context.Books
+                .Where(b => b.Id == id)
+                .ProjectTo<BookResponse>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+            
             if (book == null) return NotFound();
 
             return book;
         }
         
         [HttpPost]
-        public async Task<ActionResult<Book>> Create(BookCreateRequest bookRequest)
+        public async Task<ActionResult<BookResponse>> Create(BookCreateRequest bookRequest)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             
@@ -55,12 +68,14 @@ namespace ReadingListBackend.Controllers
             
             await _context.Books.AddAsync(book);
             await _context.SaveChangesAsync();
+            
+            var bookResponse = _mapper.Map<AuthorResponse>(book);
 
-            return CreatedAtAction(nameof(Get), new { id = book.Id }, book);
+            return CreatedAtAction(nameof(Get), new { id = book.Id }, bookResponse);
         }
         
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, BookUpdateRequest bookUpdateRequest)
+        public async Task<ActionResult<BookResponse>> Update(int id, BookUpdateRequest bookUpdateRequest)
         {
             var book = await _context.Books.FindAsync(id);
             
@@ -99,8 +114,10 @@ namespace ReadingListBackend.Controllers
                 if (!BookExists(id)) return NotFound();
                 else throw;
             }
+            
+            var updatedBook = _mapper.Map<AuthorResponse>(book);
 
-            return NoContent();
+            return Ok(updatedBook);
         }
         
         [HttpDelete("{id}")]

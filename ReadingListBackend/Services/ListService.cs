@@ -14,14 +14,16 @@ namespace ReadingListBackend.Services
             _context = context;
         }
 
+        /// <summary>
+        /// Create a new list in the database
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public async Task<bool> CreateList(string name, int userId)
         {
-            // Check if the user exists (you may want to perform additional validation)
             var user = await _context.Users.FindAsync(userId);
-            if (user == null)
-            {
-                return false;
-            }
+            if (user == null) return false;
 
             var newList = new List
             {
@@ -29,7 +31,6 @@ namespace ReadingListBackend.Services
                 UserId = userId
             };
 
-            // Add the new list to the database
             await _context.Lists.AddAsync(newList);
             await _context.SaveChangesAsync();
 

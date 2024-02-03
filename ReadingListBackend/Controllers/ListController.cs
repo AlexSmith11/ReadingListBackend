@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 using ReadingListBackend.Services;
 
 namespace ReadingListBackend.Controllers
@@ -17,44 +19,61 @@ namespace ReadingListBackend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ListService _listService;
+        private readonly IMapper _mapper;
 
-        public ListController(AppDbContext context, ListService listService)
+        public ListController(AppDbContext context, ListService listService, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
             _listService = listService ?? throw new ArgumentNullException(nameof(listService));
         }
 
-        // should change this to only send list of names and id's for top level ui
+        /// <summary>
+        /// Returns only a top level view of the lists - this does not return a tree structure including books, etc
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<List>>> Get()
+        public async Task<ActionResult<IEnumerable<ListSummaryResponse>>> Get()
         {
-            var lists = await _context.Lists.ToListAsync();
-            return lists;
+            var lists = await _context.Lists
+                .Select(list => new ListSummaryResponse
+                {
+                    Id = list.Id,
+                    Name = list.Name
+                })
+                .ToListAsync();
+
+            return Ok(lists);
         }
 
         /// <summary>
         /// Get Single List
         /// TODO: Refactor into service
         /// </summary>
-        /// <param name="listId"></param>
+        /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet("{listId}")]
-        public async Task<ActionResult<List>> Get(int listId)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ListResponse>> Get(int id)
         {
             var list = await _context.Lists
-                .Include(l => l.ListBooks) // include ListBooks for eager loading
-                .FirstOrDefaultAsync(l => l.Id == listId);
+                .Include(l => l.ListBooks)
+                .ThenInclude(lb => lb.Book)
+                .ThenInclude(b => b.Author)
+                .Include(l => l.ListBooks)
+                .ThenInclude(lb => lb.Book)
+                .ThenInclude(b => b.Genre)
+                .FirstOrDefaultAsync(l => l.Id == id);
 
-            if (list == null)
-            {
-                return NotFound();
-            }
+            if (list == null) return NotFound();
 
-            return list;
+            var listResponse = _mapper.Map<ListResponse>(list);
+
+            return listResponse;
         }
 
         /// <summary>
         /// Create a new List
+        /// TODO: Refactor to include the ListResponse class instead 
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
@@ -64,7 +83,6 @@ namespace ReadingListBackend.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var result = await _listService.CreateList(list.Name, list.UserId);
-
             if (result) return Ok(result);
 
             return BadRequest("Failed to create the list.");
@@ -73,6 +91,7 @@ namespace ReadingListBackend.Controllers
         /// <summary>
         /// Edit a given list
         /// TODO: Refactor into service
+        /// TODO: Refactor to include the ListResponse class instead 
         /// </summary>
         /// <param name="listId"></param>
         /// <param name="list"></param>
@@ -80,10 +99,7 @@ namespace ReadingListBackend.Controllers
         [HttpPut("{listId}")]
         public async Task<IActionResult> Put(int listId, List list)
         {
-            if (listId != list.Id)
-            {
-                return BadRequest();
-            }
+            if (listId != list.Id) return BadRequest();
 
             _context.Entry(list).State = EntityState.Modified;
 
@@ -110,10 +126,7 @@ namespace ReadingListBackend.Controllers
         public async Task<IActionResult> Delete(int listId)
         {
             var list = await _context.Lists.FindAsync(listId);
-            if (list == null)
-            {
-                return NotFound();
-            }
+            if (list == null) return NotFound();
 
             _context.Lists.Remove(list);
             await _context.SaveChangesAsync();
