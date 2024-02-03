@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
@@ -84,7 +83,6 @@ namespace ReadingListBackend.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var result = await _listService.CreateList(list.Name, list.UserId);
-
             if (result) return Ok(result);
 
             return BadRequest("Failed to create the list.");
@@ -101,10 +99,7 @@ namespace ReadingListBackend.Controllers
         [HttpPut("{listId}")]
         public async Task<IActionResult> Put(int listId, List list)
         {
-            if (listId != list.Id)
-            {
-                return BadRequest();
-            }
+            if (listId != list.Id) return BadRequest();
 
             _context.Entry(list).State = EntityState.Modified;
 
@@ -131,10 +126,7 @@ namespace ReadingListBackend.Controllers
         public async Task<IActionResult> Delete(int listId)
         {
             var list = await _context.Lists.FindAsync(listId);
-            if (list == null)
-            {
-                return NotFound();
-            }
+            if (list == null) return NotFound();
 
             _context.Lists.Remove(list);
             await _context.SaveChangesAsync();
