@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
@@ -7,6 +8,7 @@ using ReadingListBackend.Interfaces;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
 using ReadingListBackend.Responses;
+using ReadingListBackend.Utilities;
 
 namespace ReadingListBackend.Services
 {
@@ -20,29 +22,101 @@ namespace ReadingListBackend.Services
             _context = context;
             _mapper = mapper;
         }
-        
+
+        public async Task<PaginatedResponse<ListSummaryResponse>> GetAllListsAsync(int page = 1, int pageSize = 10)
+        {
+            var query = _context.Lists
+                .Select(list => new ListSummaryResponse
+                {
+                    Id = list.Id,
+                    Name = list.Name
+                });
+
+            var totalItems = await query.CountAsync();
+            var lists = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PaginatedResponse<ListSummaryResponse>
+            {
+                Items = lists,
+                TotalItems = totalItems,
+                PageNumber = page,
+                PageSize = pageSize
+            };
+        }
+
+        public async Task<ListResponse> GetListByIdAsync(int listId)
+        {
+            var list = await _context.Lists
+                .Include(l => l.ListBooks)
+                .ThenInclude(lb => lb.Book)
+                .ThenInclude(b => b.Author)
+                .Include(l => l.ListBooks)
+                .ThenInclude(lb => lb.Book)
+                .ThenInclude(b => b.Genre)
+                .FirstOrDefaultAsync(l => l.Id == listId);
+
+            if (list == null)
+            {
+                throw new NotFoundException("List not found");
+            }
+
+            return _mapper.Map<ListResponse>(list);
+        }
+
         public async Task<ListResponse> CreateListAsync(ListCreateRequest listCreateRequest)
         {
             var user = await _context.Users.FindAsync(listCreateRequest.UserId);
             if (user == null) throw new NotFoundException("User not found");
-            
+
             var newList = _mapper.Map<List>(listCreateRequest);
-            
+
             await _context.Lists.AddAsync(newList);
             await _context.SaveChangesAsync();
 
             return _mapper.Map<ListResponse>(newList);
         }
 
-        /// <summary>
-        /// Create a new list in the database
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public async Task<bool> CreateListAsync(string name, int userId)
+        public async Task<ListResponse> UpdateListAsync(int listId, ListUpdateRequest listUpdateRequest)
         {
-            
+            var existingList = await _context.Lists.FindAsync(listId);
+            if (existingList == null) throw new NotFoundException("List not found");
+
+            existingList.Name = listUpdateRequest.Name;
+
+            _context.Entry(existingList).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ListExists(listId))
+                    return null;
+                throw;
+            }
+
+            return _mapper.Map<ListResponse>(existingList);
+        }
+
+        private bool ListExists(int listId)
+        {
+            return _context.Lists.Any(l => l.Id == listId);
+        }
+        
+        public async Task<bool> DeleteListAsync(int listId)
+        {
+            var list = await _context.Lists.FindAsync(listId);
+            if (list == null)
+                return false;
+
+            _context.Lists.Remove(list);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task<bool> AddBookToList(int listId, int bookId, bool isRead, int? position = null)
