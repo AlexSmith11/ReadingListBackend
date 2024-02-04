@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using ReadingListBackend.Database;
 using ReadingListBackend.Exceptions;
 using ReadingListBackend.Interfaces;
 using ReadingListBackend.Models;
@@ -108,12 +106,7 @@ namespace ReadingListBackend.Controllers
         }
 
         // book to list methods
-
-        /// <summary>
-        /// Add a Book to a List using ListService
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
+        
         [HttpPost("AddBookToList")]
         public async Task<IActionResult> AddBookToList([FromBody] AddBookToListCreateRequest request)
         {
