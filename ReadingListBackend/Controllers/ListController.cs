@@ -6,6 +6,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
+using ReadingListBackend.Interfaces;
 using ReadingListBackend.Models;
 using ReadingListBackend.Requests;
 using ReadingListBackend.Responses;
@@ -19,14 +20,14 @@ namespace ReadingListBackend.Controllers
     public class ListController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly ListService _listService;
         private readonly IMapper _mapper;
+        private readonly IListService _listService;
 
-        public ListController(AppDbContext context, ListService listService, IMapper mapper)
+        public ListController(AppDbContext context, IListService listService, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
-            _listService = listService ?? throw new ArgumentNullException(nameof(listService));
+            _listService = listService;
         }
 
         /// <summary>
@@ -98,10 +99,8 @@ namespace ReadingListBackend.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var result = await _listService.CreateList(list.Name, list.UserId);
-            if (result) return Ok(result);
-
-            return BadRequest("Failed to create the list.");
+            var listResponse = await _listService.CreateListAsync(list);
+            return CreatedAtAction(nameof(Get), new { id = listResponse.Id }, listResponse);
         }
 
         /// <summary>

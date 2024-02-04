@@ -1,17 +1,37 @@
 ﻿using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ReadingListBackend.Database;
+using ReadingListBackend.Exceptions;
+using ReadingListBackend.Interfaces;
 using ReadingListBackend.Models;
+using ReadingListBackend.Requests;
+using ReadingListBackend.Responses;
 
 namespace ReadingListBackend.Services
 {
-    public class ListService
+    public class ListService : IListService
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public ListService(AppDbContext context)
+        public ListService(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
+        }
+        
+        public async Task<ListResponse> CreateListAsync(ListCreateRequest listCreateRequest)
+        {
+            var user = await _context.Users.FindAsync(listCreateRequest.UserId);
+            if (user == null) throw new NotFoundException("User not found");
+            
+            var newList = _mapper.Map<List>(listCreateRequest);
+            
+            await _context.Lists.AddAsync(newList);
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<ListResponse>(newList);
         }
 
         /// <summary>
@@ -20,21 +40,9 @@ namespace ReadingListBackend.Services
         /// <param name="name"></param>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public async Task<bool> CreateList(string name, int userId)
+        public async Task<bool> CreateListAsync(string name, int userId)
         {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return false;
-
-            var newList = new List
-            {
-                Name = name,
-                UserId = userId
-            };
-
-            await _context.Lists.AddAsync(newList);
-            await _context.SaveChangesAsync();
-
-            return true;
+            
         }
 
         public async Task<bool> AddBookToList(int listId, int bookId, bool isRead, int? position = null)
