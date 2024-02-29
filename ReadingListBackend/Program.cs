@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReadingListBackend;
 using ReadingListBackend.Database;
+using ReadingListBackend.Interfaces;
 using ReadingListBackend.Services;
+using ReadingListBackend.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +17,6 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<ListService>();
 
 // automapper config
 var mapperConfig = new MapperConfiguration(mc => { mc.AddProfile(new MappingProfile()); });
@@ -27,6 +28,9 @@ builder.Services.AddMvc();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// controller services
+builder.Services.AddScoped<IListService, ListService>();
+
 // create env
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
@@ -36,8 +40,11 @@ if (app.Environment.IsDevelopment())
 }
 
 // error handling
-app.UseExceptionHandler("/error");
-app.UseStatusCodePagesWithReExecute("/error/{0}");
+/*app.UseExceptionHandler("/error");
+app.UseStatusCodePagesWithReExecute("/error/{0}");*/
+app.UseMiddleware<ErrorHandlerMiddleware>();
+app.UseRouting();
+app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
@@ -48,6 +55,5 @@ app.UseEndpoints(endpoints =>
 });
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
 app.MapControllers();
 app.Run();

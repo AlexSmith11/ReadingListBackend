@@ -2,11 +2,12 @@
 
 namespace ReadingListBackend.Controllers
 {
+    [ApiController]
     [Route("/error")]
     public class ErrorController : Controller
     {
         [Route("{statusCode}")]
-        public IActionResult HandleError(int statusCode)
+        protected IActionResult HandleError(int statusCode)
         {
             ViewData["StatusCode"] = statusCode;
 

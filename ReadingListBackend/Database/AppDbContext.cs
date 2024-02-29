@@ -61,7 +61,5 @@ namespace ReadingListBackend.Database
                 .HasForeignKey(ulb => ulb.BookId)
                 .IsRequired();
         }
-
-
     }
 }
