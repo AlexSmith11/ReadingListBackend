@@ -1,0 +1,1 @@
+This project is just meant as a way to keep up to date with my C# skills. I have created a basic book database containing info on a book and its author/genre, with the ability to add these books to lists created by users.
