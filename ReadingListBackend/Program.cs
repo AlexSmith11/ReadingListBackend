@@ -43,6 +43,7 @@ if (app.Environment.IsDevelopment())
 /*app.UseExceptionHandler("/error");
 app.UseStatusCodePagesWithReExecute("/error/{0}");*/
 app.UseMiddleware<ErrorHandlerMiddleware>();
+app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
@@ -53,6 +54,5 @@ app.UseEndpoints(endpoints =>
 });
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
 app.MapControllers();
 app.Run();
