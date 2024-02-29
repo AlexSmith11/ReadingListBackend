@@ -43,6 +43,7 @@ if (app.Environment.IsDevelopment())
 /*app.UseExceptionHandler("/error");
 app.UseStatusCodePagesWithReExecute("/error/{0}");*/
 app.UseMiddleware<ErrorHandlerMiddleware>();
+app.UseRouting();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
